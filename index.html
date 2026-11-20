@@ -63,6 +63,19 @@ p { margin: 0; }
 .warn strong { font-weight: 700; }
 form { display: flex; flex-direction: column; gap: 14px; }
 label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+
+.cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.card { font: inherit; justify-content: center; min-height: 88px; color: var(--ink); background: var(--bg); border: 2px solid var(--line); border-radius: 14px; padding: 10px 6px 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.card:hover { border-color: var(--accent); }
+.card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.card svg { width: 100%; max-width: 92px; height: auto; }
+.card .nm { font-weight: 800; font-size: 18px; line-height: 1.2; }
+.card .sub { font-size: 12px; color: var(--muted); line-height: 1.2; }
+.card[hidden] { display: none; }
+.cards.one { max-width: 100%; }
+#changeDrug { font: 600 15px var(--font); color: var(--accent); background: none; border: 0; padding: 10px 0 0; cursor: pointer; min-height: 44px; }
+#changeDrug:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
 select { width: 100%; font: 500 16px var(--font); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px 12px; min-height: 48px; }
 select:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 #result { display: flex; flex-direction: column; gap: 10px; }
@@ -105,29 +118,39 @@ details p { margin-top: 6px; color: var(--muted); font-size: 15px; }
   <section class="box" aria-labelledby="h-form">
     <h2 id="h-form">Parametry</h2>
     <form id="f" onsubmit="return false">
-      <div>
-        <label for="drug">Lek</label>
-        <select id="drug">
-          <option value="oz">Ozempic (semaglutyd)</option>
-          <option value="mj">Mounjaro KwikPen (tirzepatyd)</option>
-          <option value="wg">Wegovy (semaglutyd)</option>
+      <div id="drugPick">
+        <label id="drugLabel">Wybierz lek</label>
+        <div class="cards" id="cards">
+          <button type="button" class="card" data-drug="oz" aria-label="Ozempic, semaglutyd"><span class="nm">Ozempic</span><span class="sub">semaglutyd</span></button>
+          <button type="button" class="card" data-drug="wg" aria-label="Wegovy, semaglutyd"><span class="nm">Wegovy</span><span class="sub">semaglutyd</span></button>
+          <button type="button" class="card" data-drug="mj" aria-label="Mounjaro KwikPen, tirzepatyd"><span class="nm">Mounjaro</span><span class="sub">tirzepatyd</span></button>
+        </div>
+        <button type="button" id="changeDrug" hidden>← Zmień lek</button>
+        <select id="drug" hidden aria-hidden="true" tabindex="-1">
+          <option value="oz">Ozempic</option>
+          <option value="mj">Mounjaro</option>
+          <option value="wg">Wegovy</option>
         </select>
       </div>
-      <div id="penRow">
+      <div id="penRow" hidden>
         <label for="pen">Pen, który masz w ręce</label>
         <select id="pen"></select>
       </div>
-      <div id="doseRow">
-        <label for="dose">Dawka przepisana przez lekarza</label>
+      <div id="doseRow" hidden>
+        <label for="dose">Dawka, którą chcesz wstrzyknąć (zgodnie z zaleceniem lekarza)</label>
         <select id="dose"></select>
       </div>
     </form>
   </section>
 
-  <section class="box" id="result" aria-live="polite" aria-labelledby="h-res">
+  <section class="box" id="result" hidden aria-live="polite" aria-labelledby="h-res">
     <h2 id="h-res">Wynik</h2>
     <div id="out"></div>
   </section>
+
+  <div class="warn" id="partialWarn" role="note" hidden></div>
+
+  <div class="warn" id="longWarn" role="alert" hidden></div>
 
   <section class="box" aria-labelledby="h-faq">
     <h2 id="h-faq">Najczęstsze pytania</h2>
@@ -143,6 +166,10 @@ details p { margin-top: 6px; color: var(--muted); font-size: 15px; }
       <summary>Skąd wzięły się te liczby?</summary>
       <p>Kalkulator przyjmuje 0,01 ml na jedno kliknięcie. Dla Mounjaro KwikPen daje to 60 kliknięć na pełną dawkę 0,6 ml. Dla Ozempic jest to szacunek zgodny z liczbami krążącymi wśród pacjentów (0,25 mg to około 18 kliknięć, 0,5 mg około 37), a nie wartość podana przez producenta. Wynik zaokrąglamy w dół.</p>
     </details>
+    <details>
+      <summary>Jak długo można używać otwartego pena?</summary>
+      <p>Ozempic: do 6 tygodni od pierwszego użycia. Mounjaro KwikPen: do 30 dni od pierwszego użycia i najwyżej 4 cotygodniowe dawki, potem pen należy wyrzucić, nawet jeśli został w nim lek. Wegovy: sprawdź ulotkę swojego pena. Te okresy wynikają z badań producentów, po ich upływie nie ma gwarancji jakości leku.</p>
+    </details>
   </section>
 
   <section class="box doc" aria-labelledby="h-doc">
@@ -150,8 +177,8 @@ details p { margin-top: 6px; color: var(--muted); font-size: 15px; }
     <p class="name">Prof. dr hab. Stanisław Dąbrowiecki</p>
     <p>Chirurg. Operuję w Szpitalu Eskulap w Osielsku koło Bydgoszczy.</p>
     <ul>
-      <li>chirurgia bariatryczna: mankiet żołądkowy (sleeve), bypass żołądkowy OAGB/MGB, operacje rewizyjne</li>
-      <li>przepukliny: technika Desarda bez siatki, Lichtenstein, laparoskopowa TAPP</li>
+      <li>chirurgia bariatryczna: mankiet żołądkowy (sleeve), operacje rewizyjne</li>
+      <li>przepukliny brzuszne i pachwinowe: technika Desarda bez siatki, Lichtenstein, laparoskopowa TAPP</li>
     </ul>
     <p>Leki z grupy GLP-1 pomagają wielu osobom. Jeśli leczenie nie przynosi oczekiwanych efektów albo szukasz trwałego rozwiązania otyłości, możemy porozmawiać o leczeniu operacyjnym.</p>
     <p><a class="cta" href="https://mniejzoladka.pl">Chirurgia otyłości: mniejzoladka.pl</a></p>
@@ -171,15 +198,15 @@ details p { margin-top: 6px; color: var(--muted); font-size: 15px; }
 
   // Ozempic: stężenie 1,34 mg/ml (pen 2 mg/1,5 ml i 4 mg/3 ml), 2,68 mg/ml (pen 8 mg/3 ml)
   var OZ = [
-    { id: "oz15", label: "Ozempic 0,25 mg / 0,5 mg (pen 1,5 ml)", conc: 1.34, marked: [0.25, 0.5], doses: [0.25, 0.5] },
-    { id: "oz1",  label: "Ozempic 1 mg (pen 3 ml)",              conc: 1.34, marked: [1],         doses: [0.25, 0.5, 1] },
-    { id: "oz2",  label: "Ozempic 2 mg (pen 3 ml)",              conc: 2.68, marked: [2],         doses: [0.25, 0.5, 1, 2] }
+    { id: "oz15", label: "Ozempic 0,25 mg / 0,5 mg (pen 1,5 ml)", vol: 1.5, conc: 1.34, marked: [0.25, 0.5], doses: [0.25, 0.5] },
+    { id: "oz1",  label: "Ozempic 1 mg (pen 3 ml)",              vol: 3, conc: 1.34, marked: [1],         doses: [0.25, 0.5, 1] },
+    { id: "oz2",  label: "Ozempic 2 mg (pen 3 ml)",              vol: 3, conc: 2.68, marked: [2],         doses: [0.25, 0.5, 1, 2] }
   ];
   // Mounjaro KwikPen: pełna dawka = 0,6 ml = 60 kliknięć
   var MJ_STR = [2.5, 5, 7.5, 10, 12.5, 15];
   var MJ = MJ_STR.map(function (s) {
     return { id: "mj" + s, label: "Mounjaro KwikPen " + fmt(s, s % 1 ? 1 : 0) + " mg", strength: s,
-             conc: s / 0.6, marked: [s], doses: MJ_STR.filter(function (d) { return d <= s; }) };
+             vol: 2.4, conc: s / 0.6, marked: [s], doses: MJ_STR.filter(function (d) { return d <= s; }) };
   });
 
   function pensFor(drug) { return drug === "oz" ? OZ : drug === "mj" ? MJ : []; }
@@ -191,6 +218,26 @@ details p { margin-top: 6px; color: var(--muted); font-size: 15px; }
       o.value = valueFn(it, i); o.textContent = labelFn(it, i);
       sel.appendChild(o);
     });
+  }
+
+  function choose(drug) {
+    $("drug").value = drug;
+    var cs = document.querySelectorAll(".card");
+    for (var i = 0; i < cs.length; i++) cs[i].hidden = cs[i].getAttribute("data-drug") !== drug;
+    $("cards").className = "cards one";
+    $("drugLabel").textContent = "Wybrany lek";
+    $("changeDrug").hidden = false;
+    $("result").hidden = false;
+    onDrug();
+    $("changeDrug").focus();
+  }
+  function reset() {
+    var cs = document.querySelectorAll(".card");
+    for (var i = 0; i < cs.length; i++) cs[i].hidden = false;
+    $("cards").className = "cards";
+    $("drugLabel").textContent = "Wybierz lek";
+    $("changeDrug").hidden = true;
+    $("penRow").hidden = true; $("doseRow").hidden = true; $("result").hidden = true; $("longWarn").hidden = true; $("partialWarn").hidden = true;
   }
 
   function onDrug() {
@@ -217,6 +264,7 @@ details p { margin-top: 6px; color: var(--muted); font-size: 15px; }
 
   function render() {
     var drug = $("drug").value, out = $("out");
+    $("longWarn").hidden = true; $("partialWarn").hidden = true;
     if (drug === "wg") {
       out.innerHTML =
         '<div class="ok">Wegovy: nie licz kliknięć.</div>' +
@@ -238,6 +286,27 @@ details p { margin-top: 6px; color: var(--muted); font-size: 15px; }
     var clicksExact = mlNeeded / ML_PER_CLICK;
     var clicks = Math.floor(clicksExact + 1e-9);
     var mgPerClick = pen.conc * ML_PER_CLICK;
+    var minMarked = Math.min.apply(null, pen.marked);
+    var partial = dose < minMarked - 1e-9;
+    var errPct = clicks > 0 ? 100 / clicks : 0;
+    var totalMg = pen.conc * pen.vol;
+    var weeks = Math.floor(totalMg / dose + 1e-9);
+    // Ozempic: 6 tygodni po pierwszym użyciu (ChPL) = 6 cotygodniowych dawek (dni 0-35)
+    // Mounjaro KwikPen: 30 dni po pierwszym użyciu i max 4 dawki z pena (ChPL/Lilly) = max 4 dawki
+    var inUse = drug === "oz" ? 6 : 4;
+    var inUseTxt = drug === "oz" ? "6 tygodni od pierwszego użycia" : "30 dni od pierwszego użycia i 4 cotygodniowe dawki";
+    var penName = drug === "oz" ? "Ozempic" : "Mounjaro KwikPen";
+    var tooLong = partial && weeks > inUse;
+    var longWarn = tooLong
+      ? '<div class="warn" role="alert"><strong>Uwaga: planowane użycie jest dłuższe, niż przewiduje instrukcja.</strong> Otwarty pen ' + penName + ', nawet w optymalnych warunkach przechowywania, może być używany tylko ' + inUseTxt + '. Przy dawce ' + fmt(dose, dose % 1 ? 2 : 0) + ' mg pen starczyłby na ok. ' + weeks + ' tyg. (dawek ponad dopuszczony okres: ' + (weeks - inUse) + '). Użycie mniejszej dawki przez więcej tygodni oznacza, że <strong>nie wiadomo, w jakim zakresie lek pozostały w penie będzie jeszcze aktywny</strong>, jałowy i właściwie stężony.</div>'
+      : '';
+    $("partialWarn").innerHTML = '<strong>Dawka mniejsza niż ta, do której pen jest przeznaczony.</strong> Pen z większą zawartością leku, z którego pobiera się mniejsze dawki, to postępowanie niezgodne z ulotką. Pen nie jest projektowany do wielokrotnego dawkowania małych porcji, a producent nie badał takiego użycia. Zwróć uwagę na ważność pena po pierwszym użyciu i warunki przechowywania z ulotki, na jałowość (nowa igła do każdego wstrzyknięcia) oraz na to, że lek pozostaje w penie przez dłuższy czas. Takie ustalenia skonsultuj z lekarzem lub farmaceutą.'; $("partialWarn").hidden = !partial;
+    $("longWarn").innerHTML = longWarn; $("longWarn").hidden = !tooLong;
+    var weeksNote = partial
+      ? '<p class="note"><strong>Na ile tygodni starczy pen?</strong> Pen zawiera nominalnie ok. ' + fmt(totalMg, 2) + ' mg, więc przy dawce ' + fmt(dose, dose % 1 ? 2 : 0) + ' mg raz w tygodniu wystarczyłby teoretycznie na ok. ' + weeks + ' tyg.' +
+        (tooLong ? '' : ' To mieści się w okresie, który producent dopuszcza dla pena ' + penName + ' (' + inUseTxt + ').') + '</p>'
+      : '';
+    var extra = weeksNote;
     out.innerHTML =
       '<div class="big"><span class="n">' + clicks + '</span><span class="u">kliknięć</span></div>' +
       '<dl class="facts">' +
@@ -246,13 +315,15 @@ details p { margin-top: 6px; color: var(--muted); font-size: 15px; }
         '<div><dt>Stężenie</dt><dd>' + fmt(pen.conc, 2) + ' mg/ml</dd></div>' +
         '<div><dt>Jedno kliknięcie</dt><dd>ok. ' + fmt(mgPerClick, 3) + ' mg</dd></div>' +
       '</dl>' +
-      '<p class="note">Wyliczone: ' + fmt(clicksExact, 1) + ' kliknięcia, zaokrąglone w dół. To metoda nieoficjalna i szacunkowa, niezgodna z instrukcją producenta. Ustalenia dotyczące dawki zawsze konsultuj z lekarzem.</p>';
+      '<p class="note">Wyliczone: ' + fmt(clicksExact, 1) + ' kliknięcia, zaokrąglone w dół. To metoda nieoficjalna i szacunkowa, niezgodna z instrukcją producenta. Ustalenia dotyczące dawki zawsze konsultuj z lekarzem.</p>' + extra;
   }
 
-  $("drug").addEventListener("change", onDrug);
+  Array.prototype.forEach.call(document.querySelectorAll(".card"), function (c) {
+    c.addEventListener("click", function () { choose(c.getAttribute("data-drug")); });
+  });
+  $("changeDrug").addEventListener("click", function () { reset(); var f = document.querySelector(".card"); if (f) f.focus(); });
   $("pen").addEventListener("change", onPen);
   $("dose").addEventListener("change", render);
-  onDrug();
 })();
 </script>
 </body>
